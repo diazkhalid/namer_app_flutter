@@ -46,30 +46,84 @@ class MyAppState extends ChangeNotifier {
   }
 }
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  var selectedIndex = 0;
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Row(
+    Widget page;
+    switch (selectedIndex) {
+      case 0:
+        page = GeneratorPage();
+        break;
+      case 1:
+        page = FavoritePage();
+        break;
+      default:
+        throw UnimplementedError('no widget for $selectedIndex');
+    }
+    return LayoutBuilder(builder: (context, constraints) {
+      return Scaffold(
+        body: Row(
+          children: [
+            SafeArea(
+                child: NavigationRail(
+              extended: constraints.maxWidth >= 600,
+              destinations: [
+                NavigationRailDestination(
+                    icon: Icon(Icons.home), label: Text('Home')),
+                NavigationRailDestination(
+                    icon: Icon(Icons.favorite), label: Text('Favorite'))
+              ],
+              selectedIndex: selectedIndex,
+              onDestinationSelected: (value) {
+                setState(() {
+                  selectedIndex = value;
+                });
+              },
+            )),
+            Expanded(
+                child: Container(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    child: page))
+          ],
+        ),
+      );
+    });
+  }
+}
+
+class FavoritePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+    var favorite = appState.favorite;
+
+    if (favorite.isEmpty) {
+      return Center(
+        child: Text('No favorites yet.'),
+      );
+    }
+
+    return Center(
+      child: ListView(
+        shrinkWrap: true,
+        padding: EdgeInsets.all(20),
         children: [
-          SafeArea(
-              child: NavigationRail(
-            extended: false,
-            destinations: [
-              NavigationRailDestination(
-                  icon: Icon(Icons.home), label: Text('Home')),
-              NavigationRailDestination(
-                  icon: Icon(Icons.favorite), label: Text('Favorite'))
-            ],
-            selectedIndex: 0,
-            onDestinationSelected: (value) {
-              print('selected: $value');
-            },
-          )),
-          Expanded(
-              child: Container(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  child: GeneratorPage()))
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text('You have '
+                '${favorite.length} favorites:'),
+          ),
+          for (var pair in favorite)
+            ListTile(
+              leading: Icon(Icons.favorite),
+              title: Text(pair.asPascalCase),
+            ),
         ],
       ),
     );
